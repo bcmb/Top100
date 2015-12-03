@@ -31,7 +31,8 @@
                 android:layout_toRightOf="@+id/iv_poster"
                 android:layout_toEndOf="@+id/iv_poster"
                 android:layout_alignParentTop="true"
-                android:layout_centerHorizontal="true" />
+                android:layout_centerHorizontal="true"
+                />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -47,6 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
                 android:id="@+id/favorites_star"
                 style="?android:attr/starStyle"/>
         </RelativeLayout>

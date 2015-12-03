@@ -87,7 +87,7 @@ public class FavoriteMoviesAdapter extends RecyclerView.Adapter {
     }
 
     private static String[] formatDataForDetailedView(ArrayList<MovieItem> mi, int index) {
-        String[] extrasArray = new String[] {
+        return new String[] {
                 (mi.get(index)).getPosterUrl(),
                 (mi.get(index)).getTitle(),
                 (mi.get(index)).getYear(),
@@ -96,6 +96,5 @@ public class FavoriteMoviesAdapter extends RecyclerView.Adapter {
                 (mi.get(index)).getPlot(),
                 (mi.get(index)).getGenres()
         };
-        return extrasArray;
     }
 }

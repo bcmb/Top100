@@ -18,9 +18,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
     public static final String SHOW_ALL = "com.example.bcmb.top100.showAllMovies";
@@ -32,7 +29,6 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     public static FavoriteMoviesAdapter mFAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private static String PREFS = "settings";
     private static final int SETTINGS_REQ_CODE = 0;
     private SharedPreferences sharedPrefs;
     private static String filename = "moviesStorage";
@@ -45,21 +41,13 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
+        mAdapter = new MovieAdapter(MainActivity.this, MainActivity.movieList);
         mFAdapter = new FavoriteMoviesAdapter(MainActivity.this, MainActivity.favoriteMoviesList);
-        FetchMovies fetchMovies = (FetchMovies) new FetchMovies(MainActivity.this, mAdapter, mRecyclerView).execute();
+        new FetchMovies(MainActivity.this, mAdapter, mRecyclerView).execute();
         readMovieDataFromFile();
         loadPrefs();
-        try {
-            fetchMovies.get(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-        }
-
-     }
+        updateMovieListAfterReopen();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -114,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         syncMoveLists();
+        updateMovieListAfterReopen();
     }
 
 
@@ -131,7 +120,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        updateUI();
         savePrefs();
         writeMovieDataToFile();
     }
@@ -164,6 +152,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        syncMoveLists();
+        updateMovieListAfterReopen();
+        mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateMovieListAfterReopen();
+        mAdapter.notifyDataSetChanged();
     }
 
     public void readMovieDataFromFile() {
@@ -182,7 +180,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateMovieListAfterReopen() {
-
+    public static void updateMovieListAfterReopen() {
+        for (MovieItem mi : MainActivity.favoriteMoviesList) {
+            for (int i = 0; i < MainActivity.movieList.size(); i++) {
+                if (MainActivity.movieList.get(i).getTitle().equals(mi.getTitle())) {
+                    MainActivity.movieList.get(i).setIsFavourite(true);
+                    break;
+                }
+            }
+        }
     }
 }

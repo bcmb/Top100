@@ -116,8 +116,11 @@ class FetchMovies extends AsyncTask<String, Void, ArrayList<MovieItem>> {
         MainActivity.mFAdapter = new FavoriteMoviesAdapter(mContext, MainActivity.favoriteMoviesList);
         if (MainActivity.showAll) {
             mRecyclerView.setAdapter(MainActivity.mAdapter);
+            MainActivity.mAdapter.notifyDataSetChanged();
         } else {
             mRecyclerView.setAdapter(MainActivity.mFAdapter);
+            MainActivity.mFAdapter.notifyDataSetChanged();
         }
+        MainActivity.updateMovieListAfterReopen();
     }
 }
