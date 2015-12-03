@@ -1,155 +1,188 @@
 package com.example.bcmb.top100;
 
-import android.app.ProgressDialog;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
-import android.view.View;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String LOG_TAG = "taggy";
-    private ProgressDialog pDialog;
-    private ArrayList<MovieItem> movieList = new ArrayList<>();
+    public static final String SHOW_ALL = "com.example.bcmb.top100.showAllMovies";
+    public static MovieAdapter mAdapter;
+    public static ArrayList<MovieItem> movieList = new ArrayList<>();
+    public static ArrayList<MovieItem> favoriteMoviesList = new ArrayList<>();
+    public static ArrayList<MovieItem> tempMovieList = new ArrayList<>();
+    public static boolean showAll = true;
     private RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mAdapter;
+    public static FavoriteMoviesAdapter mFAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
+    private static String PREFS = "settings";
+    private static final int SETTINGS_REQ_CODE = 0;
+    private SharedPreferences sharedPrefs;
+    private static String filename = "moviesStorage";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        new GetMovies().execute();
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
-        mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(getApplicationContext(), new RecyclerItemClickListener.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(View view, int position) {
-                        Intent i = new Intent(getApplicationContext(), MovieDetailedInfo.class);
-                        i.putExtra("moveDetails", formatDataForDetailedView(movieList, position));
-                        startActivity(i);
-                    }
-                })
-        );
+        mFAdapter = new FavoriteMoviesAdapter(MainActivity.this, MainActivity.favoriteMoviesList);
+        FetchMovies fetchMovies = (FetchMovies) new FetchMovies(MainActivity.this, mAdapter, mRecyclerView).execute();
+        readMovieDataFromFile();
+        loadPrefs();
+        try {
+            fetchMovies.get(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        }
 
+     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.movie_list_menu, menu);
+        return true;
     }
 
-    private class GetMovies extends AsyncTask<String, Void, ArrayList<MovieItem>> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            pDialog = new ProgressDialog(MainActivity.this);
-            pDialog.setMessage("Please wait...");
-            pDialog.setCancelable(false);
-            pDialog.show();
-
-        }
-
-        @Override
-        protected ArrayList<MovieItem> doInBackground(String... strings) {
-            HttpURLConnection urlConnection = null;
-            BufferedReader reader = null;
-            String json;
-            ArrayList<MovieItem> movies = new ArrayList<>();
-            try {
-                URL url = new URL("http://api.myapifilms.com/imdb/top?start=1&end=20&token=452e19d8-0763-4b1e-8c52-a559b5d35fe8&format=json&data=0");
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    json = null;
-                }
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line + "\n");
-                }
-
-                if (buffer.length() == 0) {
-                    json = null;
-                }
-                json = buffer.toString();
-            } catch (IOException e) {
-                json = null;
-            } finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            try {
-                JSONObject jsonObj = new JSONObject(json);
-                JSONObject data = jsonObj.getJSONObject("data");
-                JSONArray movieObjectsArray = data.getJSONArray("movies");
-                for (int i = 0; i < movieObjectsArray.length(); i++) {
-                    JSONObject movieItem = movieObjectsArray.getJSONObject(i);
-                    String posterUrl = movieItem.getString("urlPoster");
-                    String title = movieItem.getString("title");
-                    String year = movieItem.getString("year");
-                    JSONArray directors = movieItem.getJSONArray("directors");
-                    String director = "";
-                    for (int j = 0; j < directors.length(); j++) {
-                        JSONObject directorItem = directors.getJSONObject(j);
-                        director += directorItem.getString("name");
-                    }
-                    String rating = movieItem.getString("rating");
-                    String plot = movieItem.getString("plot");
-                    JSONArray genres = movieItem.getJSONArray("genres");
-                    String genre = genres.getString(0);
-                    movies.add(new MovieItem(posterUrl, title, year, director, rating, plot, genre));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return movies;
-        }
-        @Override
-        protected void onPostExecute(ArrayList<MovieItem> result) {
-            super.onPostExecute(result);
-            if (pDialog.isShowing())
-                pDialog.dismiss();
-            movieList = result;
-            mAdapter = new MovieAdapter(getApplicationContext(), movieList);
-            mRecyclerView.setAdapter(mAdapter);
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings_menu_item:
+                Intent i = new Intent(this, SettingsActivity.class);
+                i.putExtra(SHOW_ALL, showAll);
+                startActivityForResult(i, SETTINGS_REQ_CODE);
+                return true;
+            case R.id.refresh_action:
+                updateUI();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
-    private String[] formatDataForDetailedView(ArrayList<MovieItem> mi, int index) {
-        String[] extrasArray = new String[] {
-                (mi.get(index)).getPosterUrl(),
-                (mi.get(index)).getTitle(),
-                (mi.get(index)).getYear(),
-                (mi.get(index)).getDirector(),
-                (mi.get(index)).getRating(),
-                (mi.get(index)).getPlot(),
-                (mi.get(index)).getGenres()
-        };
-        return extrasArray;
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+       if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+       if (requestCode == SETTINGS_REQ_CODE) {
+           if (data == null) {
+                return;
+           }
+           showAll = data.getBooleanExtra(SHOW_ALL, true);
+           if (showAll) {
+               mRecyclerView.setAdapter(mAdapter);
+               mAdapter.notifyDataSetChanged();
+                } else {
+               mRecyclerView.setAdapter(mFAdapter);
+               mFAdapter.notifyDataSetChanged();
+           }
+       }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        syncMoveLists();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        syncMoveLists();
+    }
+
+
+    private void syncMoveLists() {
+        favoriteMoviesList.clear();
+        favoriteMoviesList.addAll(tempMovieList);
+    }
+
+    private void updateUI() {
+        syncMoveLists();
+        mAdapter.notifyDataSetChanged();
+        mFAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        updateUI();
+        savePrefs();
+        writeMovieDataToFile();
+    }
+
+    private void savePrefs() {
+        sharedPrefs = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putBoolean(SHOW_ALL, showAll);
+        editor.commit();
+    }
+
+    private void loadPrefs() {
+        sharedPrefs = getPreferences(MODE_PRIVATE);
+        showAll = sharedPrefs.getBoolean(SHOW_ALL, true);
+    }
+
+    private void writeMovieDataToFile() {
+
+        try {
+            FileOutputStream fos = this.openFileOutput(filename, Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(favoriteMoviesList);
+            oos.close();
+            fos.close();
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    public void readMovieDataFromFile() {
+        try {
+            FileInputStream fis = this.openFileInput(filename);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            tempMovieList = (ArrayList<MovieItem>) ois.readObject();
+            ois.close();
+            fis.close();
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
+            return;
+        } catch (ClassNotFoundException c) {
+            c.printStackTrace();
+            return;
+        }
+    }
+
+    private void updateMovieListAfterReopen() {
+
     }
 }

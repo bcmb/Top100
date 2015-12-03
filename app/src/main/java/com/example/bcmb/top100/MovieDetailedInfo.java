@@ -1,8 +1,10 @@
 package com.example.bcmb.top100;
 
+import android.content.Intent;
 import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -33,11 +35,17 @@ public class MovieDetailedInfo extends AppCompatActivity {
         TextView genres = (TextView) findViewById(R.id.tv_genre_detailed);
         Picasso.with(getApplicationContext()).load(mPosterUrl).into(poster);
         title.setText(mTitle);
-        year.setText("Year: "+mYear);
-        directors.setText("Director: "+mDirectors);
-        rating.setText("IMDB rating: "+mRating);
+        year.setText("Year: " + mYear);
+        directors.setText("Director: " + mDirectors);
+        rating.setText("IMDB rating: " + mRating);
         plot.setText(mPlot);
-        genres.setText("Genre: "+mGenres);
+        genres.setText("Genre: " + mGenres);
+        findViewById(R.id.iv_poster_detailed).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MovieDetailedInfo.this, MainActivity.class));
+            }
+        });
     }
 
     private void getMovieDataFormArray() {

@@ -14,15 +14,15 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
-public class MovieAdapter extends RecyclerView.Adapter {
+public class FavoriteMoviesAdapter extends RecyclerView.Adapter {
     private ArrayList<MovieItem> mMovieData = new ArrayList();
     private Context mContext;
     private MyViewHolder myViewHolder;
 
-    public MovieAdapter(Context c, ArrayList<MovieItem> movies) {
+    public FavoriteMoviesAdapter(Context c, ArrayList<MovieItem> movies) {
         mContext = c;
         mMovieData = movies;
-    }
+     }
 
     public static class MyViewHolder extends RecyclerView.ViewHolder{
         public ImageView posterImage;
@@ -49,46 +49,44 @@ public class MovieAdapter extends RecyclerView.Adapter {
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
-        Picasso.with(mContext).load(MainActivity.movieList.get(position).getPosterUrl()).into(((MyViewHolder) holder).posterImage);
-        ((MyViewHolder) holder).title.setText(MainActivity.movieList.get(position).getTitle());
-        ((MyViewHolder) holder).year.setText(MainActivity.movieList.get(position).getYear());
-        ((MyViewHolder) holder).favourites.setChecked(MainActivity.movieList.get(position).isFavourite());
-        ((MyViewHolder) holder).favourites.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                MovieItem mv = MainActivity.movieList.get(position);
-                if (mv.isFavourite()) {
-                    mv.setIsFavourite(false);
-                } else {
-                    mv.setIsFavourite(true);
+            Picasso.with(mContext).load(MainActivity.favoriteMoviesList.get(position).getPosterUrl()).into(((MyViewHolder) holder).posterImage);
+            ((MyViewHolder) holder).title.setText(MainActivity.favoriteMoviesList.get(position).getTitle());
+            ((MyViewHolder) holder).year.setText(MainActivity.favoriteMoviesList.get(position).getYear());
+            ((MyViewHolder) holder).favourites.setChecked(MainActivity.favoriteMoviesList.get(position).isFavourite());
+            ((MyViewHolder) holder).favourites.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    MovieItem mv = MainActivity.favoriteMoviesList.get(position);
+                    if (mv.isFavourite()) {
+                        mv.setIsFavourite(false);
+                    } else {
+                        mv.setIsFavourite(true);
+                    }
+                    if (MainActivity.favoriteMoviesList.contains(mv)) {
+                        MainActivity.tempMovieList.remove(mv);
+                    } else {
+                        MainActivity.tempMovieList.add(mv);
+                    }
                 }
-                if (MainActivity.favoriteMoviesList.contains(mv)) {
-                    MainActivity.favoriteMoviesList.remove(mv);
-                    MainActivity.tempMovieList.remove(mv);
-                } else {
-                    MainActivity.favoriteMoviesList.add(mv);
-                    MainActivity.tempMovieList.add(mv);
-                }
-            }
-        });
+            });
 
-        ((MyViewHolder) holder).itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent i = new Intent(mContext, MovieDetailedInfo.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra("moveDetails", formatDataForDetailedView(mMovieData, position));
-                mContext.startActivity(i);
-            }
-        });
+            ((MyViewHolder) holder).itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent i = new Intent(mContext, MovieDetailedInfo.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    i.putExtra("moveDetails", formatDataForDetailedView(mMovieData, position));
+                    mContext.startActivity(i);
+                }
+            });
     }
 
     @Override
     public int getItemCount() {
-        return mMovieData.size();
+        return MainActivity.favoriteMoviesList.size();
     }
 
-    private String[] formatDataForDetailedView(ArrayList<MovieItem> mi, int index) {
+    private static String[] formatDataForDetailedView(ArrayList<MovieItem> mi, int index) {
         String[] extrasArray = new String[] {
                 (mi.get(index)).getPosterUrl(),
                 (mi.get(index)).getTitle(),

@@ -1,6 +1,8 @@
 package com.example.bcmb.top100;
 
-public class MovieItem {
+import java.io.Serializable;
+
+public class MovieItem implements Serializable {
     private String posterUrl;
     private String title;
     private String year;
@@ -8,6 +10,7 @@ public class MovieItem {
     private String rating;
     private String plot;
     private String genres;
+    private boolean isFavourite;
 
     public MovieItem (String posterUrl, String title, String year, String director, String rating, String plot, String genres) {
         this.posterUrl = posterUrl;
@@ -45,5 +48,13 @@ public class MovieItem {
 
     public String getGenres() {
         return genres;
+    }
+
+    public boolean isFavourite() {
+        return isFavourite;
+    }
+
+    public void setIsFavourite(boolean isFavourite) {
+        this.isFavourite = isFavourite;
     }
 }
