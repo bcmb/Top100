@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_show_options">
+        <item>@string/pref_label_show_all</item>
+        <item>@string/pref_label_show_favorites</item>
+    </string-array>
+    <string-array name="pref_show_values">
+        <item>@string/pref_show_all</item>
+        <item>@string/pref_show_favorites</item>
+    </string-array>
+</resources>
